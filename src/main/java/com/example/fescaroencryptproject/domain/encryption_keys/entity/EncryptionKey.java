@@ -5,10 +5,12 @@ import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.users.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "encryption_keys")
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EncryptionKey extends BaseEntity {
@@ -23,4 +25,8 @@ public class EncryptionKey extends BaseEntity {
 
     @Column(name = "key_reference")
     private String keyReference;
+
+    public static EncryptionKey of(User user, File file, String keyReference) {
+        return new EncryptionKey(user, file, keyReference);
+    }
 }
