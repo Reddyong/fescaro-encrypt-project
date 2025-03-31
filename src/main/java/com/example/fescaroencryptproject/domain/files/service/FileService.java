@@ -76,6 +76,21 @@ public class FileService {
         return FileDTO.from(savedFile);
     }
 
+    public byte[] downloadEncrypted(Long fileId) {
+        // 파일 정보 db 에서 조회
+        File file = fileRepository.findById(fileId);
+
+        // 해당 파일의 이름과 iv 값 추출
+        String fileName = file.getFileName();
+        String iv = file.getInitializationVector();
+
+        // TODO : 해당하는 암호화 파일 S3에서 조회
+
+        // TODO : 조회한 파일 반환
+
+        return null;
+    }
+
     private String putS3(byte[] file, String fileName, String iv) {
         String uniqueFileName = DIR_NAME + "/" + fileName + "_" + iv;
 
