@@ -2,6 +2,8 @@ package com.example.fescaroencryptproject.domain.files.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.example.fescaroencryptproject.common.enums.Operation;
 import com.example.fescaroencryptproject.common.enums.Status;
 import com.example.fescaroencryptproject.common.util.AESUtil;
@@ -10,6 +12,7 @@ import com.example.fescaroencryptproject.domain.encryption_keys.repository.Encry
 import com.example.fescaroencryptproject.domain.encryption_logs.entity.EncryptionLog;
 import com.example.fescaroencryptproject.domain.encryption_logs.repository.EncryptionLogRepositoryPort;
 import com.example.fescaroencryptproject.domain.files.dto.FileDTO;
+import com.example.fescaroencryptproject.domain.files.dto.response.FileDownloadResponse;
 import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.files.repository.FileRepositoryPort;
 import com.example.fescaroencryptproject.domain.users.entity.User;
@@ -23,6 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Base64;
 
 @Service
@@ -58,6 +64,7 @@ public class FileService {
 
         // S3에 업로드
         String fileURL = putS3(encrypted, encryptedFileName, ivBase64);
+        log.info("en : " + Arrays.toString(encrypted));
 
         // 파일 db에 저장
         User user = userRepository.findById(1L);    // 해당 프로젝트에서는 회원 정보 임시 조회
@@ -76,6 +83,20 @@ public class FileService {
         return FileDTO.from(savedFile);
     }
 
+    public FileDownloadResponse downloadEncrypted(Long fileId) {
+        // 파일 정보 db 에서 조회
+        File file = fileRepository.findById(fileId);
+
+        // 해당 파일의 이름과 iv 값 추출
+        String fileName = file.getFileName();
+        String iv = file.getInitializationVector();
+
+        // 해당하는 암호화 파일 S3에서 조회 후 반환
+        byte[] downloaded = getS3(fileName, iv);
+
+        return FileDownloadResponse.of(fileName, downloaded);
+    }
+
     private String putS3(byte[] file, String fileName, String iv) {
         String uniqueFileName = DIR_NAME + "/" + fileName + "_" + iv;
 
@@ -87,4 +108,27 @@ public class FileService {
 
         return amazonS3.getUrl(bucket, uniqueFileName).toString();
     }
+
+    private byte[] getS3(String fileName, String iv) {
+        S3Object s3Object = amazonS3.getObject(bucket, DIR_NAME + "/" + fileName + "_" + iv);
+        log.info("object : " + s3Object);
+        S3ObjectInputStream inputStream = s3Object.getObjectContent();
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            byte[] byteArray = outputStream.toByteArray();
+            log.info("dw : " + Arrays.toString(byteArray));
+
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
+    }
+
 }
