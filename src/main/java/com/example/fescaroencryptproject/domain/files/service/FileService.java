@@ -64,7 +64,6 @@ public class FileService {
 
         // S3에 업로드
         String fileURL = putS3(encrypted, encryptedFileName, ivBase64);
-        log.info("en : " + Arrays.toString(encrypted));
 
         // 파일 db에 저장
         User user = userRepository.findById(1L);    // 해당 프로젝트에서는 회원 정보 임시 조회
@@ -131,7 +130,6 @@ public class FileService {
 
     private byte[] getS3(String fileName, String iv) {
         S3Object s3Object = amazonS3.getObject(bucket, DIR_NAME + "/" + fileName + "_" + iv);
-        log.info("object : " + s3Object);
         S3ObjectInputStream inputStream = s3Object.getObjectContent();
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -141,9 +139,6 @@ public class FileService {
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
-
-            byte[] byteArray = outputStream.toByteArray();
-            log.info("dw : " + Arrays.toString(byteArray));
 
             return outputStream.toByteArray();
         } catch (IOException e) {
