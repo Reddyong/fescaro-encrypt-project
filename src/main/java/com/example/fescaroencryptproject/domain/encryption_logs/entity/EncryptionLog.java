@@ -7,10 +7,12 @@ import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.users.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "encryption_logs")
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EncryptionLog extends BaseEntity {
@@ -30,5 +32,9 @@ public class EncryptionLog extends BaseEntity {
     @Column(name = "status")
     @Enumerated(value = EnumType.STRING)
     private Status status;
+
+    public static EncryptionLog of(User user, File file, Operation operation, Status status) {
+        return new EncryptionLog(user, file, operation, status);
+    }
 
 }
