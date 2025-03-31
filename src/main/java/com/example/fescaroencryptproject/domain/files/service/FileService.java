@@ -20,6 +20,8 @@ import com.example.fescaroencryptproject.domain.users.repository.UserRepositoryP
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +30,6 @@ import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Base64;
 
 @Service
@@ -118,6 +119,10 @@ public class FileService {
         encryptionLogRepository.save(encryptionLog);
 
         return FileDownloadResponse.of(fileName.substring(4), decrypted);
+    }
+
+    public Page<FileDTO> findAll(Pageable pageable) {
+        return fileRepository.findAll(pageable).map(FileDTO::from);
     }
 
     private String putS3(byte[] file, String fileName, String iv) {
