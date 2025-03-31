@@ -2,9 +2,13 @@ package com.example.fescaroencryptproject.domain.files.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.example.fescaroencryptproject.common.enums.Operation;
+import com.example.fescaroencryptproject.common.enums.Status;
 import com.example.fescaroencryptproject.common.util.AESUtil;
 import com.example.fescaroencryptproject.domain.encryption_keys.entity.EncryptionKey;
 import com.example.fescaroencryptproject.domain.encryption_keys.repository.EncryptionKeyRepositoryPort;
+import com.example.fescaroencryptproject.domain.encryption_logs.entity.EncryptionLog;
+import com.example.fescaroencryptproject.domain.encryption_logs.repository.EncryptionLogRepositoryPort;
 import com.example.fescaroencryptproject.domain.files.dto.FileDTO;
 import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.files.repository.FileRepositoryPort;
@@ -30,6 +34,7 @@ public class FileService {
     private final FileRepositoryPort fileRepository;
     private final UserRepositoryPort userRepository;
     private final EncryptionKeyRepositoryPort encryptionKeyRepository;
+    private final EncryptionLogRepositoryPort encryptionLogRepository;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -64,7 +69,9 @@ public class FileService {
         EncryptionKey encryptionKey = EncryptionKey.of(user, savedFile, secretKeyBase64);
         encryptionKeyRepository.save(encryptionKey);
 
-        // TODO : 암호화 로그 db에 저장.
+        // 암호화 로그 db에 저장.
+        EncryptionLog encryptionLog = EncryptionLog.of(user, savedFile, Operation.ENCRYPT, Status.SUCCESS);
+        encryptionLogRepository.save(encryptionLog);
 
         return FileDTO.from(savedFile);
     }
