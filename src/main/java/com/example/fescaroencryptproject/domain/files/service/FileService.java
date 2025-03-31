@@ -113,6 +113,10 @@ public class FileService {
         // 조회 한 파일 복호화 후 반환
         byte[] decrypted = AESUtil.decrypt(downloaded, ivDecoded, secretKey);
 
+        // 복호화 로그 db에 저장.
+        EncryptionLog encryptionLog = EncryptionLog.of(file.getUser(), file, Operation.DECRYPT, Status.SUCCESS);
+        encryptionLogRepository.save(encryptionLog);
+
         return FileDownloadResponse.of(fileName.substring(4), decrypted);
     }
 
