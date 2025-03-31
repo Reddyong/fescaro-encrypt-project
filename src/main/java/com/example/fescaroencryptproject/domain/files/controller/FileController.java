@@ -1,9 +1,11 @@
 package com.example.fescaroencryptproject.domain.files.controller;
 
 import com.example.fescaroencryptproject.common.entity.ApiResponse;
+import com.example.fescaroencryptproject.domain.files.dto.response.FileDownloadResponse;
 import com.example.fescaroencryptproject.domain.files.dto.response.FileEncryptResponse;
 import com.example.fescaroencryptproject.domain.files.service.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,11 +29,14 @@ public class FileController {
     }
 
     @GetMapping(path = "/{file-id}/download-encrypted")
-    public ResponseEntity<ApiResponse<?>> downloadEncrypted(
+    public ResponseEntity<?> downloadEncrypted(
             @PathVariable(name = "file-id") Long fileId
     ) {
-        return ResponseEntity.ok(
-                ApiResponse.ok()
-        );
+        FileDownloadResponse fileDownloadResponse = fileService.downloadEncrypted(fileId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileDownloadResponse.fileName())
+                .body(fileDownloadResponse.downloaded());
     }
+
 }
