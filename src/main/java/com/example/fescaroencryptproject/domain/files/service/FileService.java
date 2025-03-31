@@ -64,7 +64,6 @@ public class FileService {
 
         // S3에 업로드
         String fileURL = putS3(encrypted, encryptedFileName, ivBase64);
-        log.info("en : " + Arrays.toString(encrypted));
 
         // 파일 db에 저장
         User user = userRepository.findById(1L);    // 해당 프로젝트에서는 회원 정보 임시 조회
@@ -97,6 +96,30 @@ public class FileService {
         return FileDownloadResponse.of(fileName, downloaded);
     }
 
+    public FileDownloadResponse download(Long fileId) throws Exception {
+        // 파일 정보 db 에서 조회
+        File file = fileRepository.findById(fileId);
+
+        // 해당 파일의 이름과 iv 값 추출
+        String fileName = file.getFileName();
+        String iv = file.getInitializationVector();
+
+        byte[] ivDecoded = Base64.getDecoder().decode(iv);
+        SecretKey secretKey = AESUtil.getSecretKey();
+
+        // 해당하는 암호화 파일 S3에서 조회
+        byte[] downloaded = getS3(fileName, iv);
+
+        // 조회 한 파일 복호화 후 반환
+        byte[] decrypted = AESUtil.decrypt(downloaded, ivDecoded, secretKey);
+
+        // 복호화 로그 db에 저장.
+        EncryptionLog encryptionLog = EncryptionLog.of(file.getUser(), file, Operation.DECRYPT, Status.SUCCESS);
+        encryptionLogRepository.save(encryptionLog);
+
+        return FileDownloadResponse.of(fileName.substring(4), decrypted);
+    }
+
     private String putS3(byte[] file, String fileName, String iv) {
         String uniqueFileName = DIR_NAME + "/" + fileName + "_" + iv;
 
@@ -111,7 +134,6 @@ public class FileService {
 
     private byte[] getS3(String fileName, String iv) {
         S3Object s3Object = amazonS3.getObject(bucket, DIR_NAME + "/" + fileName + "_" + iv);
-        log.info("object : " + s3Object);
         S3ObjectInputStream inputStream = s3Object.getObjectContent();
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -121,9 +143,6 @@ public class FileService {
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
-
-            byte[] byteArray = outputStream.toByteArray();
-            log.info("dw : " + Arrays.toString(byteArray));
 
             return outputStream.toByteArray();
         } catch (IOException e) {
