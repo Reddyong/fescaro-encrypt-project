@@ -3,6 +3,8 @@ package com.example.fescaroencryptproject.domain.files.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.example.fescaroencryptproject.common.util.AESUtil;
+import com.example.fescaroencryptproject.domain.encryption_keys.entity.EncryptionKey;
+import com.example.fescaroencryptproject.domain.encryption_keys.repository.EncryptionKeyRepositoryPort;
 import com.example.fescaroencryptproject.domain.files.dto.FileDTO;
 import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.files.repository.FileRepositoryPort;
@@ -27,6 +29,7 @@ public class FileService {
     private final AmazonS3 amazonS3;
     private final FileRepositoryPort fileRepository;
     private final UserRepositoryPort userRepository;
+    private final EncryptionKeyRepositoryPort encryptionKeyRepository;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -45,7 +48,6 @@ public class FileService {
 
         String ivBase64 = Base64.getEncoder().encodeToString(iv);
         String secretKeyBase64 = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-        log.info("sk : " + secretKeyBase64);
 
         String encryptedFileName = "enc_" + uploadFile.getOriginalFilename();
 
@@ -57,6 +59,12 @@ public class FileService {
 
         File file = File.of(user, encryptedFileName, fileURL, ivBase64);
         File savedFile = fileRepository.save(file);
+
+        // 암호화 키 정보 db에 저장.
+        EncryptionKey encryptionKey = EncryptionKey.of(user, savedFile, secretKeyBase64);
+        encryptionKeyRepository.save(encryptionKey);
+
+        // TODO : 암호화 로그 db에 저장.
 
         return FileDTO.from(savedFile);
     }
