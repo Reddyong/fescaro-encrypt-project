@@ -39,4 +39,15 @@ public class AESUtil {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
         return cipher.doFinal(file);
     }
+
+    /**
+     * AES 복호화
+     */
+    public static byte[] decrypt(byte[] encryptedFile, byte[] iv, SecretKey secretKey) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+        return cipher.doFinal(encryptedFile);
+    }
 }
