@@ -39,4 +39,15 @@ public class FileController {
                 .body(fileDownloadResponse.downloaded());
     }
 
+    @GetMapping(path = "/{file-id}/download")
+    public ResponseEntity<?> download(
+            @PathVariable(name = "file-id") Long fileId
+    ) throws Exception {
+        FileDownloadResponse download = fileService.download(fileId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attacment; filename=" + download.fileName())
+                .body(download.downloaded());
+    }
+
 }
