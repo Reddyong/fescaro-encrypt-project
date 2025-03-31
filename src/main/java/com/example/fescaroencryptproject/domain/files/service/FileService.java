@@ -97,6 +97,26 @@ public class FileService {
         return FileDownloadResponse.of(fileName, downloaded);
     }
 
+    public FileDownloadResponse download(Long fileId) throws Exception {
+        // 파일 정보 db 에서 조회
+        File file = fileRepository.findById(fileId);
+
+        // 해당 파일의 이름과 iv 값 추출
+        String fileName = file.getFileName();
+        String iv = file.getInitializationVector();
+
+        byte[] ivDecoded = Base64.getDecoder().decode(iv);
+        SecretKey secretKey = AESUtil.getSecretKey();
+
+        // 해당하는 암호화 파일 S3에서 조회
+        byte[] downloaded = getS3(fileName, iv);
+
+        // 조회 한 파일 복호화 후 반환
+        byte[] decrypted = AESUtil.decrypt(downloaded, ivDecoded, secretKey);
+
+        return FileDownloadResponse.of(fileName.substring(4), decrypted);
+    }
+
     private String putS3(byte[] file, String fileName, String iv) {
         String uniqueFileName = DIR_NAME + "/" + fileName + "_" + iv;
 
