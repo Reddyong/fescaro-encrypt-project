@@ -3,8 +3,12 @@ package com.example.fescaroencryptproject.domain.files.controller;
 import com.example.fescaroencryptproject.common.entity.ApiResponse;
 import com.example.fescaroencryptproject.domain.files.dto.response.FileDownloadResponse;
 import com.example.fescaroencryptproject.domain.files.dto.response.FileEncryptResponse;
+import com.example.fescaroencryptproject.domain.files.dto.response.FileResponse;
 import com.example.fescaroencryptproject.domain.files.service.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +52,16 @@ public class FileController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attacment; filename=" + download.fileName())
                 .body(download.downloaded());
+    }
+
+    @GetMapping(path = "/files")
+    public ResponseEntity<ApiResponse<?>> findAll(
+            @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.ASC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(fileService.findAll(pageable).map(FileResponse::from))
+        );
     }
 
 }
