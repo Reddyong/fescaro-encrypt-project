@@ -2,11 +2,14 @@ package com.example.fescaroencryptproject.domain.files.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.example.fescaroencryptproject.domain.encryption_keys.entity.EncryptionKey;
 import com.example.fescaroencryptproject.domain.encryption_keys.repository.EncryptionKeyRepositoryPort;
 import com.example.fescaroencryptproject.domain.encryption_logs.entity.EncryptionLog;
 import com.example.fescaroencryptproject.domain.encryption_logs.repository.EncryptionLogRepositoryPort;
 import com.example.fescaroencryptproject.domain.files.dto.FileDTO;
+import com.example.fescaroencryptproject.domain.files.dto.response.FileDownloadResponse;
 import com.example.fescaroencryptproject.domain.files.entity.File;
 import com.example.fescaroencryptproject.domain.files.repository.FileRepositoryPort;
 import com.example.fescaroencryptproject.domain.users.entity.User;
@@ -88,5 +91,33 @@ public class FileServiceTest {
         verify(userRepository).findById(1L);
         verify(encryptionKeyRepository).save(any(EncryptionKey.class));
         verify(encryptionLogRepository).save(any(EncryptionLog.class));
+    }
+
+    @Test
+    @DisplayName(value = "암호화 된 파일 다운로드 서비스 테스트")
+    void downloadEncryptedTest() {
+        // given
+        String fileName = "enc_test.bin";
+        String ivBase64 = "dummy_iv";
+        String fileURL = "https://s3.amazonaws.com/test-bucket/fescaro-binary-file/enc_test.bin_dummy_iv";
+
+        // Mock S3Object 생성
+        S3Object s3Object = new S3Object();
+        byte[] dummyData = "test data".getBytes();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(dummyData);
+        S3ObjectInputStream s3InputStream = new S3ObjectInputStream(inputStream, null);
+        s3Object.setObjectContent(s3InputStream);
+
+        File file = File.of(new User(), fileName, fileURL, ivBase64);
+        when(fileRepository.findById(1L)).thenReturn(file);
+        when(amazonS3.getObject(eq(bucket), anyString())).thenReturn(s3Object);
+
+        // when
+        FileDownloadResponse response = fileService.downloadEncrypted(1L);
+
+        // then
+        assertNotNull(response);
+        verify(fileRepository).findById(1L);
+        verify(amazonS3).getObject(eq(bucket), anyString());
     }
 }
