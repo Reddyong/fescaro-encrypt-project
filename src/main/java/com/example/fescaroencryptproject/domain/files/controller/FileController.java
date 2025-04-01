@@ -54,7 +54,7 @@ public class FileController {
                 .body(download.downloaded());
     }
 
-    @GetMapping(path = "/files")
+    @GetMapping(path = "")
     public ResponseEntity<ApiResponse<?>> findAll(
             @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.ASC)
             Pageable pageable
