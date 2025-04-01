@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바이너리 파일 암호화 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script>
+        let currentPage = 0;
+        const pageSize = 5;
+
+        function fetchFileList(event, page = 0) {
+            if (event) {
+                event.preventDefault();  // 버튼 기본 동작 방지
+            }
+
+            if (typeof page !== "number" || page < 0) {
+                console.error("Invalid page number:", page);
+                return;
+            }
+
+            // 페이지 번호 갱신
+            currentPage = page;
+
+            fetch(`/api/v1/files?page=${page}&size=${pageSize}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);  // 데이터 확인
+                    if (data.status !== 200) {
+                        alert("파일 목록을 불러오는 데 실패했습니다.");
+                        return;
+                    }
+
+                    let tbody = document.getElementById("fileTableBody");
+                    tbody.innerHTML = ""; // 기존 목록 초기화
+
+                    data.data.content.forEach((file, index) => {
+                        let row = `<tr>
+                    <td>${index + 1 + page * pageSize}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>${file.decryptedFileName}</span>
+                            <a href="/api/v1/files/${file.id}/download-encrypted" class="btn btn-warning btn-sm">
+                                download
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span>${file.encryptedFileName}</span>
+                            <a href="/api/v1/files/${file.id}/download" class="btn btn-success btn-sm">
+                                download
+                            </a>
+                        </div>
+                    </td>
+                    <td>${file.iv}</td>
+                    <td>${file.createdAt}</td>
+                </tr>`;
+                        tbody.innerHTML += row;
+                    });
+
+                    // 페이지네이션 버튼 업데이트
+                    updatePagination(data.data);
+                })
+                .catch(error => {
+                    console.error("파일 목록 로드 실패:", error);
+                    alert("파일 목록을 불러오지 못했습니다.");
+                });
+        }
+
+        // 파일 업로드
+        function uploadFile() {
+            let formData = new FormData();
+            let fileInput = document.getElementById("uploadFile");
+
+            if (!fileInput.files.length) {
+                alert("업로드할 파일을 선택해주세요.");
+                return;
+            }
+
+            formData.append("uploadFile", fileInput.files[0]);
+
+            // Progress Bar 초기화 및 표시
+            let progressContainer = document.getElementById("progress-container");
+            let progressBar = document.getElementById("progress-bar");
+            let progressText = document.getElementById("progress-text");
+
+            progressContainer.style.display = "block";  // Progress Bar 보이기
+            progressBar.value = 0;  // 초기값 0
+            progressText.innerText = "0%";
+
+            // XMLHttpRequest 를 사용하여 업로드 진행 상태 추적
+            let xhr = new XMLHttpRequest();
+
+            xhr.open("POST", "/api/v1/files/upload", true);
+
+            // 업로드 진행 상태를 추적하는 이벤트 리스너
+            xhr.upload.addEventListener("progress", function(event) {
+                if (event.lengthComputable) {
+                    let percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.value = percentComplete;
+                    progressText.innerText = Math.round(percentComplete) + "%";
+                }
+            });
+
+            // 업로드 완료 시 처리
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    alert("파일 업로드 성공!");
+                    fetchFileList(); // 업로드 후 목록 새로고침
+                } else {
+                    alert("파일 업로드 실패: " + xhr.responseText);
+                }
+                progressContainer.style.display = "none";  // 업로드 완료 후 Progress Bar 숨기기
+            };
+
+            // 요청 보내기
+            xhr.send(formData);
+        }
+
+        function updatePagination(pageData) {
+            let pagination = document.getElementById("pagination");
+            pagination.innerHTML = ""; // 기존 버튼 초기화
+
+            let prevDisabled = currentPage === 0 ? "disabled" : "";
+            let nextDisabled = currentPage === pageData.totalPages - 1 ? "disabled" : "";
+
+            pagination.innerHTML = `
+                <button class="btn btn-secondary" ${prevDisabled} id="prevBtn">이전</button>
+                <span> ${currentPage + 1} / ${pageData.totalPages} </span>
+                <button class="btn btn-secondary" ${nextDisabled} id="nextBtn">다음</button>
+            `;
+
+            // 페이지네이션 버튼에 이벤트 리스너 추가
+            // 이벤트 리스너를 통해 버튼이 클릭되면 실행 될 함수 설정
+            document.getElementById('prevBtn').addEventListener('click', function() {
+                fetchFileList(event, currentPage - 1);  // 이전 페이지로 이동
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', function() {
+                fetchFileList(event, currentPage + 1);  // 다음 페이지로 이동
+            });
+        }
+
+        // 페이지 로드 시 파일 목록 불러오기
+        window.onload = function() {
+            fetchFileList(null, currentPage);  // 첫 페이지 목록 불러오기
+        };
+    </script>
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .table th, .table td {
+            text-align: center;
+        }
+        .progress-container {
+             width: 100%;
+             max-width: 500px;
+             margin: 20px auto;
+             text-align: center;
+         }
+
+        progress {
+            width: 100%;
+            height: 25px;
+        }
+
+        #progress-text {
+            display: block;
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="text-center">바이너리 파일 암호화 시스템</h2>
+    <!-- Progress Bar -->
+    <div id="progress-container" class="progress-container" style="display: none;">
+        <progress id="progress-bar" value="0" max="100"></progress>
+        <span id="progress-text">0%</span>
+    </div>
+
+    <!-- 파일 업로드 폼 -->
+    <div class="mb-3">
+        <input type="file" id="uploadFile" class="form-control">
+        <button class="btn btn-primary mt-2" onclick="uploadFile()">파일 업로드</button>
+    </div>
+
+    <table class="table table-bordered mt-3">
+        <thead>
+        <tr>
+            <th>No.</th>
+            <th>암호화 대상 파일</th>
+            <th>암호화 된 파일</th>
+            <th>IV 값</th>
+            <th>일시</th>
+        </tr>
+        </thead>
+        <tbody id="fileTableBody">
+        <!-- JavaScript 에서 파일 목록을 동적으로 추가 -->
+        </tbody>
+    </table>
+
+    <div id="pagination" class="text-center mt-3">
+        <!-- 페이지네이션 버튼이 여기에 추가됨 -->
+    </div>
+</div>
+</body>
+</html>
