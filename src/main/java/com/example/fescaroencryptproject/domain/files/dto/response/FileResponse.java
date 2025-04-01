@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.time.LocalDateTime;
 
-@JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonNaming(value = PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public record FileResponse(
         Long id,
         String decryptedFileName,
