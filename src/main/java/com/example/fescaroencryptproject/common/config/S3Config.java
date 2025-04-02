@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * S3 환경변수 관련 참고 블로그 : https://yel-m.tistory.com/19
+ */
 @Configuration
 public class S3Config {
 

@@ -6,6 +6,9 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 
+/**
+ * 암호화 / 복호화 참고 블로그 : https://junyharang.tistory.com/364
+ */
 public class AESUtil {
 
     private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
