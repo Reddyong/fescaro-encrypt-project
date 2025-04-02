@@ -21,10 +21,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Pageable;
 import java.io.ByteArrayInputStream;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -119,5 +125,29 @@ public class FileServiceTest {
         assertNotNull(response);
         verify(fileRepository).findById(1L);
         verify(amazonS3).getObject(eq(bucket), anyString());
+    }
+
+    @Test
+    @DisplayName(value = "암호화 현황 조회 서비스 테스트")
+    void findAllTest() {
+        // given
+        PageRequest pageRequest = PageRequest.of(0, 5);
+        List<File> fileList = List.of(
+                new File(new User(), "enc_file1.bin", "https://s3.amazonaws.com/bucket/enc_file1.bin", "dummy_iv1"),
+                new File(new User(), "enc_file2.bin", "https://s3.amazonaws.com/bucket/enc_file2.bin", "dummy_iv2")
+        );
+
+        Page<File> filePage = new PageImpl<>(fileList, pageRequest, fileList.size());
+
+        when(fileRepository.findAll(pageRequest)).thenReturn(filePage);
+
+        // when
+        Page<FileDTO> fileDTOS = fileService.findAll(pageRequest);
+
+        // then
+        assertNotNull(fileDTOS);
+        assertEquals(2, fileDTOS.getTotalElements());
+        assertEquals("enc_file1.bin", fileDTOS.getContent().get(0).fileName());
+        verify(fileRepository).findAll(pageRequest);
     }
 }
