@@ -50,7 +50,7 @@ public class FileController {
         FileDownloadResponse download = fileService.download(fileId);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attacment; filename=" + download.fileName())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + download.fileName())
                 .body(download.downloaded());
     }
 
