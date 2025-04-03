@@ -40,7 +40,7 @@
                     <td>
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>${file.decryptedFileName}</span>
-                            <a href="/api/v1/files/${file.id}/download-encrypted" class="btn btn-warning btn-sm">
+                            <a href="/api/v1/files/${file.id}/download" class="btn btn-warning btn-sm">
                                 download
                             </a>
                         </div>
@@ -48,7 +48,7 @@
                     <td>
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span>${file.encryptedFileName}</span>
-                            <a href="/api/v1/files/${file.id}/download" class="btn btn-success btn-sm">
+                            <a href="/api/v1/files/${file.id}/download-encrypted" class="btn btn-success btn-sm">
                                 download
                             </a>
                         </div>
